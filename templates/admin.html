@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="text-3xl font-bold mb-6 text-gray-800">Panel Admin - Manajemen Transaksi Escrow</h2>
+<div class="bg-white p-6 rounded shadow">
+    <table class="w-full text-left border-collapse">
+        <thead class="bg-gray-800 text-white">
+            <tr>
+                <th class="py-3 px-4">ID Transaksi</th>
+                <th class="py-3 px-4">Tutor Penerima</th>
+                <th class="py-3 px-4">Nominal</th>
+                <th class="py-3 px-4">Status Dana</th>
+                <th class="py-3 px-4">Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for t in transaksi %}
+            <tr class="border-b hover:bg-gray-50">
+                <td class="py-3 px-4 font-bold text-gray-600">#{{ t.id_transaksi }}</td>
+                <td class="py-3 px-4 font-semibold">{{ t.tutor_nama }}</td>
+                <td class="py-3 px-4 font-bold text-gray-700">Rp {{ t.nominal_bayar }}</td>
+                <td class="py-3 px-4 font-bold {% if t.status_dana == 'Ditahan' %} text-yellow-600 {% else %} text-blue-600 {% endif %}">
+                    {{ t.status_dana }}
+                </td>
+                <td class="py-3 px-4">
+                    {% if t.status_dana == 'Ditahan' %}
+                    <form action="/cairkan/{{ t.id_transaksi }}" method="POST">
+                        <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded font-bold hover:bg-green-700">Cairkan ke Tutor</button>
+                    </form>
+                    {% else %}
+                    <span class="text-gray-400 font-semibold italic">Sudah Selesai</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" class="py-4 text-center text-gray-500">Belum ada data transaksi masuk.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
