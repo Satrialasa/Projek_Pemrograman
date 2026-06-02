@@ -1,24 +1,39 @@
 {% extends "base.html" %}
 {% block content %}
 <a href="/siswa" class="text-blue-600 font-bold mb-4 inline-block hover:underline">&larr; Kembali ke Daftar Tutor</a>
-<h2 class="text-2xl font-bold mb-6 text-gray-800">Request Booking ke {{ tutor.nama_lengkap }}</h2>
-<div class="bg-white p-6 rounded shadow max-w-lg">
-    <form method="POST" action="/book/{{ tutor.id_tutor }}">
-        <div class="mb-4">
-            <label class="block text-gray-700 font-bold mb-2">Tanggal</label>
-            <input type="date" name="tanggal" class="w-full px-3 py-2 border rounded" required>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
+    <div class="bg-white p-6 rounded shadow">
+        <h2 class="text-2xl font-bold mb-2 text-gray-800">{{ tutor.nama_lengkap }}</h2>
+        <p class="text-gray-600 mb-6 border-b pb-4">Tarif Bimbingan: <span class="font-bold text-green-600">Rp {{ tutor.tarif_per_jam }}/jam</span></p>
+        
+        <h3 class="text-lg font-bold mb-2 text-blue-600">Informasi Jadwal Ketersediaan:</h3>
+        <div class="bg-blue-50 p-4 rounded border-l-4 border-blue-500 text-gray-700 whitespace-pre-line">
+            {{ tutor.jadwal_ketersediaan if tutor.jadwal_ketersediaan else "Tutor belum menuliskan jadwal ketersediaannya." }}
         </div>
-        <div class="grid grid-cols-2 gap-4 mb-6">
-            <div>
-                <label class="block text-gray-700 font-bold mb-2">Waktu Mulai</label>
-                <input type="time" name="waktu_mulai" class="w-full px-3 py-2 border rounded" required>
+    </div>
+
+    <div class="bg-white p-6 rounded shadow border-t-4 border-green-500">
+        <h3 class="text-xl font-bold mb-4 text-gray-800">Ajukan Waktu Bimbingan</h3>
+        <p class="text-sm text-gray-500 mb-4">Silakan masukkan jadwal yang Anda inginkan berdasarkan informasi ketersediaan tutor di samping.</p>
+        
+        <form method="POST" action="/book/{{ tutor.id_tutor }}">
+            <div class="mb-4">
+                <label class="block text-gray-700 font-bold mb-2">Pilih Tanggal</label>
+                <input type="date" name="tanggal" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-green-500" required>
             </div>
-            <div>
-                <label class="block text-gray-700 font-bold mb-2">Waktu Selesai</label>
-                <input type="time" name="waktu_selesai" class="w-full px-3 py-2 border rounded" required>
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div>
+                    <label class="block text-gray-700 font-bold mb-2">Waktu Mulai</label>
+                    <input type="time" name="waktu_mulai" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-green-500" required>
+                </div>
+                <div>
+                    <label class="block text-gray-700 font-bold mb-2">Waktu Selesai</label>
+                    <input type="time" name="waktu_selesai" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-green-500" required>
+                </div>
             </div>
-        </div>
-        <button type="submit" class="w-full bg-blue-600 text-white px-4 py-2 rounded font-bold hover:bg-blue-700">Kirim Request Booking & Buat Tagihan</button>
-    </form>
+            <button type="submit" class="w-full bg-green-600 text-white px-4 py-3 rounded font-bold hover:bg-green-700 shadow-sm transition duration-200">Kirim Pengajuan Booking</button>
+        </form>
+    </div>
 </div>
 {% endblock %}
