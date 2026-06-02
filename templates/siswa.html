@@ -1,16 +1,27 @@
 {% extends "base.html" %}
 {% block content %}
+<div class="mb-8">
+    <form method="GET" action="/siswa" class="flex gap-2 w-full max-w-2xl">
+        <input type="text" name="q" value="{{ keyword }}" placeholder="Cari nama tutor atau spesialisasi (Contoh: Fisika, Python, Mekanika)..." class="w-full px-4 py-3 border rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700">
+        <button type="submit" class="bg-blue-600 text-white px-8 py-3 rounded font-bold hover:bg-blue-700 shadow-sm transition duration-200">Cari</button>
+    </form>
+</div>
+
 <h2 class="text-3xl font-bold mb-6 text-gray-800">Daftar Tutor Tersedia</h2>
 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
     {% for tutor in tutors %}
-    <div class="bg-white p-6 rounded shadow border-t-4 border-blue-500">
-        <h3 class="text-xl font-bold text-blue-600 mb-2">{{ tutor.nama_lengkap }}</h3>
-        <p class="text-gray-700">Spesialisasi: <span class="font-bold">{{ tutor.spesialisasi_mapel }}</span></p>
-        <p class="text-gray-700 mb-4">Tarif: <span class="font-bold text-green-600">Rp {{ tutor.tarif_per_jam }}/jam</span></p>
-        <a href="/jadwal_tutor/{{ tutor.id_tutor }}" class="block text-center bg-blue-100 text-blue-700 font-bold py-2 rounded hover:bg-blue-200">Request Booking</a>
+    <div class="bg-white p-6 rounded shadow border-t-4 border-blue-500 flex flex-col justify-between">
+        <div>
+            <h3 class="text-xl font-bold text-blue-600 mb-2">{{ tutor.nama_lengkap }}</h3>
+            <p class="text-gray-700">Spesialisasi: <span class="font-bold">{{ tutor.spesialisasi_mapel }}</span></p>
+            <p class="text-gray-700 mb-4">Tarif: <span class="font-bold text-green-600">Rp {{ tutor.tarif_per_jam }}/jam</span></p>
+        </div>
+        <a href="/jadwal_tutor/{{ tutor.id_tutor }}" class="block text-center bg-blue-100 text-blue-700 font-bold py-2 rounded hover:bg-blue-200 mt-4 transition duration-200">Request Booking</a>
     </div>
     {% else %}
-    <p class="text-gray-500 col-span-3">Belum ada tutor yang terdaftar.</p>
+    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 col-span-3">
+        <p class="text-yellow-700 font-semibold">Tutor dengan kriteria tersebut tidak ditemukan.</p>
+    </div>
     {% endfor %}
 </div>
 
@@ -22,22 +33,39 @@
                 <th class="py-3 px-4">Nama Tutor</th>
                 <th class="py-3 px-4">Tanggal & Waktu</th>
                 <th class="py-3 px-4">Status</th>
+                <th class="py-3 px-4">Link Pertemuan</th>
             </tr>
         </thead>
         <tbody>
             {% for b in bookings %}
             <tr class="border-b hover:bg-gray-50">
                 <td class="py-3 px-4 font-semibold">{{ b.tutor_nama }}</td>
-                <td class="py-3 px-4">{{ b.tanggal }} | {{ b.waktu_mulai }}</td>
-                <td class="py-3 px-4 font-bold 
-                    {% if b.status_sesi == 'Dikonfirmasi' %} text-green-600 
-                    {% elif b.status_sesi == 'Ditolak' %} text-red-600 
-                    {% else %} text-yellow-600 {% endif %}">
-                    {{ b.status_sesi }}
+                <td class="py-3 px-4">{{ b.waktu }}</td>
+                <td class="py-3 px-4">
+                    {% if b.status == 'Menunggu Pembayaran' %}
+                        <form method="POST" action="/bayar/{{ b.id_sesi }}">
+                            <button type="submit" class="bg-yellow-500 text-white px-4 py-2 rounded font-bold text-sm hover:bg-yellow-600 shadow-sm transition">Bayar Sekarang</button>
+                        </form>
+                    {% else %}
+                        <span class="font-bold 
+                            {% if b.status == 'Dikonfirmasi' %} text-green-600 
+                            {% elif b.status == 'Ditolak' %} text-red-600 
+                            {% elif b.status == 'Selesai' %} text-gray-600
+                            {% else %} text-yellow-600 {% endif %}">
+                            {{ b.status }}
+                        </span>
+                    {% endif %}
+                </td>
+                <td class="py-3 px-4">
+                    {% if b.status == 'Dikonfirmasi' %}
+                        <a href="{{ b.link_meet }}" target="_blank" class="text-blue-600 hover:underline font-semibold">Buka Link</a>
+                    {% else %}
+                        <span class="text-gray-400">-</span>
+                    {% endif %}
                 </td>
             </tr>
             {% else %}
-            <tr><td colspan="3" class="py-4 text-center text-gray-500">Belum ada riwayat booking jadwal.</td></tr>
+            <tr><td colspan="4" class="py-4 text-center text-gray-500">Belum ada riwayat booking jadwal.</td></tr>
             {% endfor %}
         </tbody>
     </table>
