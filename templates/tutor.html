@@ -2,57 +2,89 @@
 {% block content %}
 <h2 class="text-2xl font-bold mb-6">Dashboard Tutor - {{ tutor.nama }}</h2>
 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-    <div class="bg-white p-6 rounded shadow mb-6">
-        <h3 class="text-xl font-bold mb-4 text-gray-800 border-b pb-2">Request Booking dari Siswa</h3>
-        <table class="w-full text-left border-collapse">
-            <thead class="bg-gray-50 border-b-2">
-                <tr>
-                    <th class="py-2 px-2">Siswa</th>
-                    <th class="py-2 px-2">Waktu</th>
-                    <th class="py-2 px-2">Aksi</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for p in pending_bookings %}
-                <tr class="border-b">
-                    <td class="py-2 px-2">{{ p.siswa_nama }}</td>
-                    <td class="py-2 px-2">{{ p.tanggal }} | {{ p.waktu_mulai }}</td>
-                    <td class="py-2 px-2 flex gap-2">
-                        <form method="POST" action="/confirm/{{ p.id_sesi }}/terima">
-                            <button class="bg-blue-600 text-white px-3 py-1 rounded text-sm font-bold">Terima</button>
-                        </form>
-                        <form method="POST" action="/confirm/{{ p.id_sesi }}/tolak">
-                            <button class="bg-red-500 text-white px-3 py-1 rounded text-sm font-bold">Tolak</button>
-                        </form>
-                    </td>
-                </tr>
-                {% else %}
-                    <tr><td colspan="3" class="py-4 text-gray-500 text-center">Belum ada request baru.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
+
+    <div class="flex flex-col gap-6">
+        <div class="bg-white p-6 rounded shadow border-t-4 border-blue-500">
+            <h3 class="text-xl font-bold mb-4 text-gray-800 border-b pb-2">Informasi Ketersediaan Jadwal</h3>
+            <p class="text-sm text-gray-600 mb-4">Beritahu siswa kapan saja Anda bisa mengajar (Misal: Senin-Jumat jam 15.00-20.00, Sabtu-Minggu 08.00-15.00).</p>
+            <form method="POST" action="/atur_jadwal">
+                <textarea name="jadwal_ketersediaan" rows="4" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 mb-4" placeholder="Tuliskan jadwal kosong Anda di sini...">{{ tutor.jadwal_ketersediaan }}</textarea>
+                <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 rounded hover:bg-blue-700 transition duration-200">Perbarui Jadwal Ketersediaan</button>
+            </form>
+        </div>
     </div>
 
-    <div class="bg-white p-6 rounded shadow">
-        <h3 class="text-xl font-bold mb-4 text-gray-800 border-b pb-2">Jadwal Akan Datang</h3>
-        <table class="w-full text-left border-collapse">
-            <thead class="bg-gray-50 border-b-2">
-                <tr>
-                    <th class="py-2 px-2">Nama Siswa</th>
-                    <th class="py-2 px-2">Jadwal Sesi</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for c in confirmed_bookings %}
-                <tr class="border-b">
-                    <td class="py-2 px-2 font-semibold">{{ c.siswa_nama }}</td>
-                    <td class="py-2 px-2 font-bold text-green-600">{{ c.tanggal }} | {{ c.waktu_mulai }}</td>
-                </tr>
-                {% else %}
-                    <tr><td colspan="2" class="py-4 text-gray-500 text-center">Belum ada jadwal pasti.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <div class="flex flex-col gap-6">
+        <div class="bg-white p-6 rounded shadow">
+            <h3 class="text-xl font-bold mb-4 text-gray-800 border-b pb-2">Pengajuan Booking Baru</h3>
+            <table class="w-full text-left border-collapse text-sm">
+                <thead class="bg-gray-50 border-b-2">
+                    <tr>
+                        <th class="py-2 px-2">Siswa</th>
+                        <th class="py-2 px-2">Waktu Diajukan</th>
+                        <th class="py-2 px-2">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in pending_bookings %}
+                    <tr class="border-b">
+                        <td class="py-2 px-2 font-semibold">{{ p.siswa_nama }}</td>
+                        <td class="py-2 px-2">{{ p.tanggal }} | {{ p.waktu_mulai }}</td>
+                        <td class="py-2 px-2 flex gap-1">
+                            <form method="POST" action="/confirm/{{ p.id_sesi }}/terima">
+                                <button class="bg-blue-600 text-white px-2 py-1 rounded text-xs font-bold hover:bg-blue-700">Terima</button>
+                            </form>
+                            <form method="POST" action="/confirm/{{ p.id_sesi }}/tolak">
+                                <button class="bg-red-500 text-white px-2 py-1 rounded text-xs font-bold hover:bg-red-600">Tolak</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                        <tr><td colspan="3" class="py-4 text-gray-500 text-center">Belum ada request baru.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="bg-white p-6 rounded shadow">
+            <h3 class="text-xl font-bold mb-4 text-gray-800 border-b pb-2">Jadwal Akan Datang</h3>
+            <table class="w-full text-left border-collapse text-sm">
+                <thead class="bg-gray-50 border-b-2">
+                    <tr>
+                        <th class="py-2 px-2">Nama Siswa</th>
+                        <th class="py-2 px-2">Jadwal Sesi</th>
+                        <th class="py-2 px-2">Link Pertemuan</th>
+                        <th class="py-2 px-2">Aksi / Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in confirmed_bookings %}
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="py-2 px-2 font-semibold">{{ c.siswa_nama }}</td>
+                        <td class="py-2 px-2 font-bold text-green-600">{{ c.tanggal }} | {{ c.waktu_mulai }}</td>
+                        <td class="py-2 px-2">
+                            {% if c.status_sesi == 'Dikonfirmasi' %}
+                                <a href="{{ c.link_meet }}" target="_blank" class="text-blue-600 hover:underline font-semibold">Buka Link</a>
+                            {% else %}
+                                <span class="text-gray-400">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-2 px-2">
+                            {% if c.status_sesi == 'Menunggu Pembayaran' %}
+                                <span class="text-yellow-600 font-bold text-xs italic">Menunggu Pembayaran</span>
+                            {% elif c.status_sesi == 'Dikonfirmasi' %}
+                                <form method="POST" action="/selesai/{{ c.id_sesi }}">
+                                    <button class="bg-green-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-green-700">Selesai</button>
+                                </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                        <tr><td colspan="4" class="py-4 text-gray-500 text-center">Belum ada jadwal pasti.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 {% endblock %}
