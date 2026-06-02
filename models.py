@@ -13,57 +13,56 @@ class Database:
     @staticmethod
     def init_db():
         conn = Database.get_connection()
-        # 1. Tabel SISWA
         conn.execute('''CREATE TABLE IF NOT EXISTS siswa (
-            id_siswa INTEGER PRIMARY KEY AUTOINCREMENT, 
-            nama_lengkap TEXT NOT NULL,
-            email TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL, 
-            tingkat_sekolah TEXT,
-            kredit_saldo REAL DEFAULT 0
+            id_siswa INTEGER PRIMARY KEY AUTOINCREMENT, nama_lengkap TEXT NOT NULL,
+            email TEXT UNIQUE NOT NULL, password TEXT NOT NULL, 
+            tingkat_sekolah TEXT, kredit_saldo REAL DEFAULT 0
         )''')
-        # 2. Tabel TUTOR
         conn.execute('''CREATE TABLE IF NOT EXISTS tutor (
-            id_tutor INTEGER PRIMARY KEY AUTOINCREMENT, 
-            nama_lengkap TEXT NOT NULL,
-            email TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL, 
-            spesialisasi_mapel TEXT, 
-            tarif_per_jam REAL,
-            status_verifikasi BOOLEAN DEFAULT 0,
-            rating_akumulasi REAL DEFAULT 0
+            id_tutor INTEGER PRIMARY KEY AUTOINCREMENT, nama_lengkap TEXT NOT NULL,
+            email TEXT UNIQUE NOT NULL, password TEXT NOT NULL, 
+            spesialisasi_mapel TEXT, tarif_per_jam REAL,
+            status_verifikasi BOOLEAN DEFAULT 0, rating_akumulasi REAL DEFAULT 0,
+            jadwal_ketersediaan TEXT DEFAULT 'Belum mengatur jadwal ketersediaan.'
         )''')
-        # 3. Tabel ADMINPLATFORM
         conn.execute('''CREATE TABLE IF NOT EXISTS adminplatform (
-            id_admin INTEGER PRIMARY KEY AUTOINCREMENT, 
-            nama_lengkap TEXT NOT NULL,
-            email TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL, 
-            level_akses TEXT
+            id_admin INTEGER PRIMARY KEY AUTOINCREMENT, nama_lengkap TEXT NOT NULL,
+            email TEXT UNIQUE NOT NULL, password TEXT NOT NULL, level_akses TEXT
         )''')
-        # 4. Tabel SESIBELAJAR
         conn.execute('''CREATE TABLE IF NOT EXISTS sesibelajar (
-            id_sesi INTEGER PRIMARY KEY AUTOINCREMENT, 
-            siswa_id INTEGER,
-            tutor_id INTEGER,
-            tanggal TEXT,
-            waktu_mulai TEXT,
-            waktu_selesai TEXT,
+            id_sesi INTEGER PRIMARY KEY AUTOINCREMENT, siswa_id INTEGER,
+            tutor_id INTEGER, tanggal TEXT, waktu_mulai TEXT, waktu_selesai TEXT,
             status_sesi TEXT DEFAULT 'Menunggu',
             FOREIGN KEY(siswa_id) REFERENCES siswa(id_siswa),
             FOREIGN KEY(tutor_id) REFERENCES tutor(id_tutor)
         )''')
-        # 5. Tabel TRANSAKSI
         conn.execute('''CREATE TABLE IF NOT EXISTS transaksi (
-            id_transaksi INTEGER PRIMARY KEY AUTOINCREMENT,
-            sesi_id INTEGER,
-            nominal_bayar REAL,
-            potongan_admin REAL,
-            status_dana TEXT DEFAULT 'Ditahan',
+            id_transaksi INTEGER PRIMARY KEY AUTOINCREMENT, sesi_id INTEGER,
+            nominal_bayar REAL, potongan_admin REAL, status_dana TEXT DEFAULT 'Ditahan',
             FOREIGN KEY(sesi_id) REFERENCES sesibelajar(id_sesi)
         )''')
         conn.commit()
         conn.close()
+
+class SesiBelajar:
+    def __init__(self, id_sesi, tanggal, waktu_mulai, waktu_selesai, status_sesi, siswa_id=None, tutor_id=None):
+        self.id_sesi = id_sesi
+        self.tanggal = tanggal
+        self.waktu_mulai = waktu_mulai
+        self.waktu_selesai = waktu_selesai
+        self.status_sesi = status_sesi
+        self.siswa_id = siswa_id
+        self.tutor_id = tutor_id
+
+    def generateLinkMeeting(self):
+        return f"https://meet.tutorsync.com/sesi-{self.id_sesi}"
+
+    def tandaiSelesai(self):
+        conn = Database.get_connection()
+        conn.execute('UPDATE sesibelajar SET status_sesi = "Selesai" WHERE id_sesi = ?', (self.id_sesi,))
+        conn.commit()
+        conn.close()
+        self.status_sesi = "Selesai"
 
 class Siswa:
     def __init__(self, id_siswa, nama_lengkap, email, tingkat_sekolah, kredit_saldo):
@@ -82,9 +81,17 @@ class Siswa:
             return user
         return None
 
-    def cariTutor(self):
+    def cariTutor(self, keyword=""):
         conn = Database.get_connection()
-        tutors = conn.execute('SELECT id_tutor, nama_lengkap, spesialisasi_mapel, tarif_per_jam FROM tutor').fetchall()
+        if keyword:
+            query_str = f"%{keyword}%"
+            tutors = conn.execute('''
+                SELECT id_tutor, nama_lengkap, spesialisasi_mapel, tarif_per_jam 
+                FROM tutor 
+                WHERE nama_lengkap LIKE ? OR spesialisasi_mapel LIKE ?
+            ''', (query_str, query_str)).fetchall()
+        else:
+            tutors = conn.execute('SELECT id_tutor, nama_lengkap, spesialisasi_mapel, tarif_per_jam FROM tutor').fetchall()
         conn.close()
         return tutors
 
@@ -98,6 +105,14 @@ class Siswa:
         conn.commit()
         conn.close()
         return id_sesi
+
+    def bayarTagihan(self, id_sesi):
+        # Mengubah status menjadi Dikonfirmasi setelah siswa membayar
+        conn = Database.get_connection()
+        conn.execute('UPDATE sesibelajar SET status_sesi = "Dikonfirmasi" WHERE id_sesi = ? AND siswa_id = ?', 
+                     (id_sesi, self.id_siswa))
+        conn.commit()
+        conn.close()
 
 class Tutor:
     def __init__(self, id_tutor, nama_lengkap, email, spesialisasi_mapel, tarif_per_jam, status_verifikasi, rating_akumulasi):
@@ -118,8 +133,15 @@ class Tutor:
             return user
         return None
 
+    def aturJadwalKosong(self, teks_jadwal):
+        conn = Database.get_connection()
+        conn.execute('UPDATE tutor SET jadwal_ketersediaan = ? WHERE id_tutor = ?', (teks_jadwal, self.id_tutor))
+        conn.commit()
+        conn.close()
+
     def menerimaBooking(self, id_sesi, is_accepted):
-        status = "Dikonfirmasi" if is_accepted else "Ditolak"
+        # Berubah menjadi Menunggu Pembayaran, bukan langsung Dikonfirmasi
+        status = "Menunggu Pembayaran" if is_accepted else "Ditolak"
         conn = Database.get_connection()
         conn.execute('UPDATE sesibelajar SET status_sesi = ? WHERE id_sesi = ? AND tutor_id = ?', 
                      (status, id_sesi, self.id_tutor))
@@ -151,7 +173,7 @@ class AdminPlatform:
 class Transaksi:
     @staticmethod
     def buatTagihan(id_sesi, nominal):
-        potongan = float(nominal) * 0.10 # Potongan admin 10%
+        potongan = float(nominal) * 0.10
         conn = Database.get_connection()
         conn.execute('''INSERT INTO transaksi (sesi_id, nominal_bayar, potongan_admin, status_dana) 
                         VALUES (?, ?, ?, "Ditahan")''', (id_sesi, nominal, potongan))
